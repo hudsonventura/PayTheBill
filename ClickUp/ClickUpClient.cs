@@ -1,14 +1,10 @@
-﻿using RestSharp;
-using ClickUp.Repositories;
+﻿using ClickUp.Repositories;
 
 
 namespace ClickUp;
 
 public class ClickUpClient
 {
-    RestClient client;
-
-
     public TaskRepository Tasks { get; }
     public ListRepository Lists { get; }
     public FoldersRepository Folders { get; }
@@ -16,16 +12,18 @@ public class ClickUpClient
     public TaskRelationshipRepository TaskRelationships { get; }
 
     public ClickUpClient(string token) {
+        HttpClient client = new HttpClient();
         string url = "https://api.clickup.com/api/v2";
-        client = new RestClient(url);
-        client.AddDefaultHeader("Authorization", token);
+        client.BaseAddress = new Uri(url);
+
+        client.DefaultRequestHeaders.Add("Authorization", token);
 
 
-        Tasks = new TaskRepository(client);
-        Lists = new ListRepository(client);
-        Folders = new FoldersRepository(client);
-        Timers = new TimerRepository(client);
-        TaskRelationships = new TaskRelationshipRepository(client);
+        Tasks = new TaskRepository(client, url);
+        Lists = new ListRepository(client,url);
+        Folders = new FoldersRepository(client, url);
+        Timers = new TimerRepository(client, url);
+        TaskRelationships = new TaskRelationshipRepository(client, url);
     }
 
 

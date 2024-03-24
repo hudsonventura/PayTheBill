@@ -8,12 +8,26 @@
             "name": ".NET Core Launch (console)",
             "type": "coreclr",
             "request": "launch",
-            "preLaunchTask": "dotnet: build",
-            "program": "${workspaceFolder}/bin/Debug/net6.0/PayTheBill.dll",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/PayTheBill/bin/Debug/net6.0/PayTheBill.dll",
             "args": [],
-            "cwd": "${workspaceFolder}",
-            "stopAtEntry": false,
-            "console": "internalConsole"
+            "cwd": "${workspaceFolder}/PayTheBill",
+            "console": "internalConsole",
+            "stopAtEntry": false
         },
+        {
+            "name": ".NET Core Attach",
+            "type": "coreclr",
+            "request": "attach"
+        },
+        {
+            "name": "Docker .NET Launch",
+            "type": "docker",
+            "request": "launch",
+            "preLaunchTask": "docker-run: debug",
+            "netCore": {
+                "appProject": "${workspaceFolder}/PayTheBill/PayTheBill.csproj"
+            }
+        }
     ]
 }

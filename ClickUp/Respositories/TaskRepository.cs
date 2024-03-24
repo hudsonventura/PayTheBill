@@ -1,22 +1,19 @@
 ﻿using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
-using RestSharp;
+using System.Text;
 
 namespace ClickUp.Repositories;
 
 public class TaskRepository : BaseRepository
 {
-
-    public TaskRepository(RestClient client)
+    public TaskRepository(HttpClient client, string baseURL) : base(client, baseURL)
     {
-        this.client = client;
     }
 
     public List<Task> GetTasks(double list_id, int page = 0, bool include_closed = false)
     {
-        var request = new RestRequest($"/list/{list_id}/task", Method.Get);
-        request.AddParameter("page", page);
-        request.AddParameter("include_closed", include_closed);
+        var request = new HttpRequestMessage(HttpMethod.Get, $"{baseURL}/list/{list_id}/task?page={page}&include_closed={include_closed}");
+
         var jsonObj = CallAPI(request);
         var json = jsonObj["tasks"].ToString();
         List<Task> list = JsonConvert.DeserializeObject<List<Task>>(json);
@@ -28,9 +25,9 @@ public class TaskRepository : BaseRepository
         return GetTasks(list_id, page, include_closed);
     }
     
-    internal Task GetTask(string task_id)
+    public Task GetTask(string task_id)
     {
-        var request = new RestRequest($"/task/{task_id}", Method.Get);
+        var request = new HttpRequestMessage(HttpMethod.Get, $"{baseURL}/task/{task_id}");
         var jsonObj = CallAPI(request);
         var json = jsonObj.ToString();
         Task obj = JsonConvert.DeserializeObject<Task>(json);
@@ -42,18 +39,13 @@ public class TaskRepository : BaseRepository
 
     public Task CreateTask(double list_id, Task task)
     {
-        var request = new RestRequest($"/list/{list_id}/task", Method.Post);
+        var request = new HttpRequestMessage(HttpMethod.Post, $"{baseURL}/list/{list_id}/task");
         try
         {
-            string jsonBody = JsonConvert.SerializeObject(task);
-            request.AddBody(jsonBody);
-            var response = client.Execute(request);
-            if (response.StatusCode != System.Net.HttpStatusCode.OK)
-            {
-                throw new Exception(response.Content);
-            }
-            var jsonObj = JArray.Parse($"[{response.Content}]");
-            var json = jsonObj[0].ToString();
+            string jsonBody = JsonConvert.SerializeObject(TaskCreation.FromTask(task));
+            request.Content = new StringContent(jsonBody, Encoding.UTF8, "application/json");
+            var jsonObj = CallAPI(request);
+            var json = jsonObj.ToString();
             Task obj = JsonConvert.DeserializeObject<Task>(json);
             return obj;
         }
@@ -65,18 +57,17 @@ public class TaskRepository : BaseRepository
 
     internal void AddTaskLink(string task_id, string links_to)
     {
-        if (task_id.StartsWith("#") || links_to.StartsWith("#"))
-        {
-            throw new Exception("Task(s) ID cannot start with '#'. Remove it before.");
-        }
-        var request = new RestRequest($"/task/{task_id}/link/{links_to}", Method.Post);
+        //Remove the '#' before task_id
+        task_id = task_id.StartsWith("#") ? task_id.Substring(1) : task_id;
+
+        //Remove the '#' before task_id
+        links_to = links_to.StartsWith("#") ? links_to.Substring(1) : links_to;
+        
+
+        var request = new HttpRequestMessage(HttpMethod.Post, $"{baseURL}/task/{task_id}/link/{links_to}");
         try
         {
-            var response = client.Execute(request);
-            if (response.StatusCode != System.Net.HttpStatusCode.OK)
-            {
-                throw new Exception(response.Content);
-            }
+            var jsonObj = CallAPI(request);
         }
         catch (Exception error)
         {
@@ -86,16 +77,13 @@ public class TaskRepository : BaseRepository
 
     public void UpdateTask(Task task)
     {
-        var request = new RestRequest($"/task/{task.id}", Method.Put);
+        var request = new HttpRequestMessage(HttpMethod.Put, $"{baseURL}/task/{task.id}");
         try
         {
             string jsonBody = JsonConvert.SerializeObject(task);
-            request.AddBody(jsonBody);
-            var response = client.Execute(request);
-            if (response.StatusCode != System.Net.HttpStatusCode.OK)
-            {
-                throw new Exception(response.Content);
-            }
+            request.Content = new StringContent(jsonBody, Encoding.UTF8, "application/json");
+            
+            var jsonObj = CallAPI(request);
         }
         catch (Exception error)
         {
@@ -105,7 +93,7 @@ public class TaskRepository : BaseRepository
 
     public void PostComment(string task_id, string comment, int? assignee = null, bool notify_all = true)
     {
-        var request = new RestRequest($"/task/{task_id}/comment", Method.Post);
+        var request = new HttpRequestMessage(HttpMethod.Post, $"{baseURL}/task/{task_id}/comment");
         try
         {
             string jsonBody = JsonConvert.SerializeObject(new {
@@ -113,12 +101,8 @@ public class TaskRepository : BaseRepository
                 assignee = assignee,
                 notify_all = notify_all
             });
-            request.AddBody(jsonBody);
-            var response = client.Execute(request);
-            if (response.StatusCode != System.Net.HttpStatusCode.OK)
-            {
-                throw new Exception(response.Content);
-            }
+            request.Content = new StringContent(jsonBody, Encoding.UTF8, "application/json");
+            var response = CallAPI(request);
         }
         catch (Exception error)
         {

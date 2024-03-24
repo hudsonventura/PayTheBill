@@ -1,21 +1,20 @@
 ﻿using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
-using RestSharp;
 using System.Threading.Tasks;
+using System.Text;
 
 
 namespace ClickUp.Repositories;
 
 public class TimerRepository : BaseRepository
 {
-    internal TimerRepository(RestClient client)
+    public TimerRepository(HttpClient client, string baseURL) : base(client, baseURL)
     {
-        this.client = client;
     }
 
     public void StartTimer(string id_team, string task_id)
     {
-        var request = new RestRequest($"/team/{id_team}/time_entries/", Method.Post);
+        var request = new HttpRequestMessage(HttpMethod.Post, $"{baseURL}/team/{id_team}/time_entries/");
         var timestamp = DateTimeOffset.Now.ToUnixTimeSeconds().ToString() + "000";
         dynamic jsonObj = new
         {
@@ -24,34 +23,23 @@ public class TimerRepository : BaseRepository
             tid = task_id,
         };
         string jsonBody = JsonConvert.SerializeObject(jsonObj);
-        request.AddBody(jsonBody);
-        var response = client.Execute(request);
-        if (response.StatusCode != System.Net.HttpStatusCode.OK)
-        {
-            throw new Exception(response.Content);
-        }
+        request.Content = new StringContent(jsonBody, Encoding.UTF8, "application/json");
+
+        var response = CallAPI(request);
     }
 
     public void StopTimers(string id_team)
     {
-        var request = new RestRequest($"/team/{id_team}/time_entries/stop/", Method.Post);
-        var response = client.Execute(request);
-        if (response.StatusCode != System.Net.HttpStatusCode.OK)
-        {
-            throw new Exception(response.Content);
-        }
+        var request = new HttpRequestMessage(HttpMethod.Post, $"{baseURL}/team/{id_team}/time_entries/stop/");
+        var response = CallAPI(request);
     }
 
 
     public bool GetActiveTimer(string id_team, string task_id)
     {
-        var request = new RestRequest($"/team/{id_team}/time_entries/current/", Method.Get);
-        request.AddQueryParameter("task_id", task_id);
-        var response = client.Execute(request);
-        if (response.StatusCode != System.Net.HttpStatusCode.OK)
-        {
-            throw new Exception(response.Content);
-        }
+        var request = new HttpRequestMessage(HttpMethod.Get, $"{baseURL}/team/{id_team}/time_entries/current?task_id={task_id}");
+        
+        var response = CallAPI(request);
         return true;
     }
 }

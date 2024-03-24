@@ -1,20 +1,17 @@
 ﻿using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
-using RestSharp;
-
+using System.Text;
 namespace ClickUp.Repositories;
 
 public class ListRepository : BaseRepository
 {
-    internal ListRepository(RestClient client)
+    public ListRepository(HttpClient client, string baseURL) : base(client, baseURL)
     {
-        this.client = client;
     }
-
 
     internal List GetList(double list_id)
     {
-        var request = new RestRequest($"/list/{list_id}", Method.Get);
+        var request = new HttpRequestMessage(HttpMethod.Get, $"{baseURL}/list/{list_id}");
         var jsonResponse = CallAPI(request);
         return JsonConvert.DeserializeObject<List>(jsonResponse.ToString()); 
 
@@ -22,17 +19,14 @@ public class ListRepository : BaseRepository
 
     internal List CreateList(double folder_id, List list)
     {
-        var request = new RestRequest($"/folder/{folder_id}/list", Method.Post);
+        var request = new HttpRequestMessage(HttpMethod.Post, $"{baseURL}/folder/{folder_id}/list");
         try
         {
             string jsonBody = JsonConvert.SerializeObject(list);
-            request.AddBody(jsonBody);
-            var response = client.Execute(request);
-            if (response.StatusCode != System.Net.HttpStatusCode.OK)
-            {
-                throw new Exception(response.Content);
-            }
-            var jsonObj = JArray.Parse($"[{response.Content}]");
+            request.Content = new StringContent(jsonBody, Encoding.UTF8, "application/json");
+
+            var jsonObj = CallAPI(request);
+            
             var json = jsonObj[0].ToString();
             List obj = JsonConvert.DeserializeObject<List>(json);
             return obj;
