@@ -11,7 +11,7 @@
             "preLaunchTask": "build",
             "program": "${workspaceFolder}/PayTheBill/bin/Debug/net6.0/PayTheBill.dll",
             "args": [],
-            "cwd": "${workspaceFolder}/PayTheBill",
+            "cwd": "${workspaceFolder}",
             "console": "internalConsole",
             "stopAtEntry": false
         },
